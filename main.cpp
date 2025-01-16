@@ -14,21 +14,27 @@
 using namespace std;
 
 void print(string cmd, StatusType res);
+
 void print(string cmd, output_t<int> res);
+
 void print(string cmd, output_t<bool> res);
 
-int main()
-{
-    
+int main() {
+
     int d1, d2;
 
     // Init
-    Plains *obj = new Plains();
-    
+    Plains* obj = new Plains();
+
     // Execute all commands in file
     string op;
-    while (cin >> op)
-    {
+    int counter = 0;
+    while (cin >> op) {
+        counter++;
+        if (counter == 1020) {
+            int x = 0;
+            x += 2;
+        }
         if (!op.compare("add_team")) {
             cin >> d1;
             print(op, obj->add_team(d1));
@@ -55,7 +61,7 @@ int main()
             return -1;
         }
         // Verify no faults
-        if (cin.fail()){
+        if (cin.fail()) {
             cout << "Invalid input format" << endl;
             return -1;
         }
@@ -67,21 +73,19 @@ int main()
 }
 
 // Helpers
-static const char *StatusTypeStr[] =
-{
-    "SUCCESS",
-    "ALLOCATION_ERROR",
-    "INVALID_INPUT",
-    "FAILURE"
-};
+static const char* StatusTypeStr[] =
+        {
+                "SUCCESS",
+                "ALLOCATION_ERROR",
+                "INVALID_INPUT",
+                "FAILURE"
+        };
 
-void print(string cmd, StatusType res) 
-{
+void print(string cmd, StatusType res) {
     cout << cmd << ": " << StatusTypeStr[(int) res] << endl;
 }
 
-void print(string cmd, output_t<int> res)
-{
+void print(string cmd, output_t<int> res) {
     if (res.status() == StatusType::SUCCESS) {
         cout << cmd << ": " << StatusTypeStr[(int) res.status()] << ", " << res.ans() << endl;
     } else {
@@ -89,10 +93,10 @@ void print(string cmd, output_t<int> res)
     }
 }
 
-void print(string cmd, output_t<bool> res)
-{
+void print(string cmd, output_t<bool> res) {
     if (res.status() == StatusType::SUCCESS) {
-        cout << cmd << ": " << StatusTypeStr[(int) res.status()] << ", " << (res.ans() ? "True" : "False") << endl;
+        cout << cmd << ": " << StatusTypeStr[(int) res.status()] << ", "
+             << (res.ans() ? "True" : "False") << endl;
     } else {
         cout << cmd << ": " << StatusTypeStr[(int) res.status()] << endl;
     }

@@ -14,13 +14,31 @@
 #define PLAINS25WINTER_WET1_H_
 
 #include "wet2util.h"
+#include "unordered_map"
+
+using namespace std;
+
+#include "custom_objects.h"
+#include <memory>
 
 class Plains {
 private:
     //
     // Here you may add anything you want
     //
-    
+    unordered_map<int, unique_ptr<Jockey>> jockeys;
+    unordered_map<int, unique_ptr<Team>> teams;
+    unordered_map<int, unordered_map<int, Team*>> records;
+
+    void addTeamRecord(Team* team, int record);
+
+    void addJockeyRecord(Jockey* jockey, int record);
+
+    Team* findRealTeam(Team* team);
+
+    void unionTeams(Team* team1, Team* team2);
+
+
 public:
     // <DO-NOT-MODIFY> {
     Plains();
