@@ -68,7 +68,7 @@ public:
         }
 
         // Key not found, insert default value
-        table[index].emplace_back(key, T());
+        table[index].emplace_back(KeyValuePair<T>(key, T()));
         ++num_elements;
         check_and_resize();
 
@@ -106,7 +106,7 @@ public:
     const T& front() {
         for (auto& bucket: table) {
             if (!bucket.empty()) {
-                return bucket.front().value;
+                return bucket.back().value;
             }
         }
         throw std::runtime_error("No elements found in the hash table");
