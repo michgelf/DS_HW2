@@ -5,7 +5,6 @@
 #ifndef DS_WET2_WINTER_2024_2025_HASH_TABLE_H
 #define DS_WET2_WINTER_2024_2025_HASH_TABLE_H
 
-#include <cassert>
 #include <vector>
 #include <list>
 
@@ -58,6 +57,8 @@ private:
 public:
     HashTable() : table(INITIAL_SIZE), num_elements(0) {}
 
+    // If key does not exist, inserts a new key with a default value.
+    // Assumes that if this is not the wanted behavior, the user will use contains() before
     T& operator[](int key) {
         unsigned int index = hash(key);
         for (auto& entry: table[index]) {
@@ -103,13 +104,11 @@ public:
     }
 
     const T& front() {
-        assert(!empty());
         for (auto& bucket: table) {
             if (!bucket.empty()) {
                 return bucket.front().value;
             }
         }
-        // shouldn't reach here
         throw std::runtime_error("No elements found in the hash table");
     }
 
