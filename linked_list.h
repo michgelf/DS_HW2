@@ -31,11 +31,6 @@ public:
         delete head;
     }
 
-    // Disable copy and assignment
-    LinkedList(const LinkedList&) = delete;
-
-    LinkedList& operator=(const LinkedList&) = delete;
-
 
     void emplace_back(const T& value) {
         Node* newNode = new Node(std::move(value));
@@ -69,8 +64,12 @@ public:
         if (pos.current == head) {
             Node* tmp = head;
             head = head->next;
+            if (tail == tmp) {
+                tail = nullptr;
+            }
             tmp->next = nullptr;
             delete tmp;
+            return;
         }
 
         // Find the nodeBefore before the node to remove
@@ -83,6 +82,9 @@ public:
         if (nodeBefore->next) {
             Node* tmp = nodeBefore->next;
             nodeBefore->next = tmp->next;
+            if (tmp == tail) {
+                tail = nodeBefore;
+            }
             tmp->next = nullptr;
             delete tmp;
         }
@@ -105,9 +107,9 @@ public:
         bool operator!=(const Iterator& other) const { return current != other.current; }
     };
 
-    Iterator begin() { return Iterator(head); }
+    Iterator begin() const { return Iterator(head); }
 
-    Iterator end() { return Iterator(nullptr); }
+    Iterator end() const { return Iterator(nullptr); }
 };
 
 
