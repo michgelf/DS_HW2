@@ -12,6 +12,8 @@ struct Team {
     int id;
     int record;
 
+    Team() : id(0), record(0) {}
+
     Team(int id) : id(id), record(0) {}
 };
 
@@ -43,13 +45,13 @@ public:
         }
 
         // check if the set is a root
-        if (sets.find(setId) != sets.end() && sets.at(setId).id == setId) {
+        if (sets.contains(setId) && sets[setId].id == setId) {
             return true;
         }
 
         // check if the parent is a root
         int parentId = parents[setId];
-        if (sets.find(parentId) != sets.end() && sets.at(parentId).id == setId) {
+        if (sets.contains(parentId) && sets[parentId].id == setId) {
             return true;
         }
 

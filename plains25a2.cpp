@@ -29,7 +29,7 @@ StatusType Plains::add_jockey(int jockeyId, int teamId) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (jockeysTeams.find(jockeyId) != jockeysTeams.end() || !teams.contains(teamId)) {
+    if (jockeysTeams.contains(jockeyId) || !teams.contains(teamId)) {
         return StatusType::FAILURE;
     }
 
@@ -44,8 +44,7 @@ StatusType Plains::update_match(int victoriousJockeyId, int losingJockeyId) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (jockeysTeams.find(victoriousJockeyId) == jockeysTeams.end() ||
-        jockeysTeams.find(losingJockeyId) == jockeysTeams.end() ||
+    if (!jockeysTeams.contains(victoriousJockeyId) || !jockeysTeams.contains(losingJockeyId) ||
         teams.findRootId(jockeysTeams[victoriousJockeyId]) ==
         teams.findRootId(jockeysTeams[losingJockeyId])) {
         return StatusType::FAILURE;
@@ -75,12 +74,12 @@ StatusType Plains::unite_by_record(int record) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (records.find(record) == records.end() || records.find(-record) == records.end() ||
-        records[record].size() != 1 || records[-record].size() != 1) {
+    if (!records.contains(record) || !records.contains(-record) || records[record].size() != 1 ||
+        records[-record].size() != 1) {
         return StatusType::FAILURE;
     }
 
-    unionTeams(records[record].begin()->second, records[-record].begin()->second);
+    unionTeams(records[record].front(), records[-record].front());
     return StatusType::SUCCESS;
 }
 
@@ -89,7 +88,7 @@ output_t<int> Plains::get_jockey_record(int jockeyId) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (jockeysRecords.find(jockeyId) == jockeysRecords.end()) {
+    if (!jockeysRecords.contains(jockeyId)) {
         return StatusType::FAILURE;
     }
 

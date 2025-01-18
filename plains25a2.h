@@ -15,26 +15,19 @@
 
 #include "wet2util.h"
 
-#include "unordered_map"
+#include "hash_table.h"
 #include "union_find_teams.h"
 
-
-//struct Jockey {
-//    int record;
-//    int teamId;
-//
-//    Jockey(int teamId) : teamId(teamId), record(0) {}
-//};
 
 class Plains {
 private:
     //
     // Here you may add anything you want
     //
-    unordered_map<int, int> jockeysRecords;
-    unordered_map<int, int> jockeysTeams;
+    HashTable<int> jockeysRecords;
+    HashTable<int> jockeysTeams;
     UnionFindTeams teams;
-    unordered_map<int, unordered_map<int, int>> records;
+    HashTable<HashTable<int>> records;
 
     void addJockeyRecord(int, int);
 

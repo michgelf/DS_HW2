@@ -2,10 +2,8 @@
 // Created by michg on 1/17/2025.
 //
 
-
-#include <unordered_map>
-
-using namespace std;
+#include <cassert>
+#include "hash_table.h"
 
 #ifndef C_SCRIPTS_UNION_FIND_H
 #define C_SCRIPTS_UNION_FIND_H
@@ -13,9 +11,9 @@ using namespace std;
 template<class Set>
 class UnionFind {
 protected:
-    unordered_map<int, Set> sets; // maps roots to sets descriptions
-    unordered_map<int, unsigned int> sizes; // maps roots to sizes of sets
-    unordered_map<int, int> parents;
+    HashTable<Set> sets; // maps roots to sets descriptions
+    HashTable<unsigned int> sizes; // maps roots to sizes of sets
+    HashTable<int> parents;
 public:
 
     virtual ~UnionFind() = default;
@@ -23,7 +21,7 @@ public:
     void make_set(int setId, Set set) {
         if (!hasEverExisted(setId)) {
             parents[setId] = setId;
-            sets.insert({setId, set});
+            sets[setId] = set;
             sizes[setId] = 1;
         }
     }
@@ -42,7 +40,8 @@ public:
     }
 
     Set& getRootSet(int root) {
-        return sets.at(root);
+        assert(sets.contains(root));
+        return sets[root];
     }
 
     int findRootId(int setId) {
@@ -57,7 +56,7 @@ public:
     }
 
     bool hasEverExisted(int member) {
-        return parents.find(member) != parents.end();
+        return parents.contains(member);
     }
 
 
