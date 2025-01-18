@@ -14,30 +14,35 @@
 #define PLAINS25WINTER_WET1_H_
 
 #include "wet2util.h"
+
 #include "unordered_map"
+#include "union_find_teams.h"
 
-using namespace std;
 
-#include "custom_objects.h"
-#include <memory>
+//struct Jockey {
+//    int record;
+//    int teamId;
+//
+//    Jockey(int teamId) : teamId(teamId), record(0) {}
+//};
 
 class Plains {
 private:
     //
     // Here you may add anything you want
     //
-    unordered_map<int, unique_ptr<Jockey>> jockeys;
-    unordered_map<int, unique_ptr<Team>> teams;
-    unordered_map<int, unordered_map<int, Team*>> records;
+    unordered_map<int, int> jockeysRecords;
+    unordered_map<int, int> jockeysTeams;
+    UnionFindTeams teams;
+    unordered_map<int, unordered_map<int, int>> records;
 
-    void addTeamRecord(Team* team, int record);
+    void addJockeyRecord(int, int);
 
-    void addJockeyRecord(Jockey* jockey, int record);
+    void addTeamRecord(Team&, int);
 
-    Team* findRealTeam(Team* team);
+    void eraseFromRecords(Team& team);
 
-    void unionTeams(Team* team1, Team* team2);
-
+    void unionTeams(int team1, int team2);
 
 public:
     // <DO-NOT-MODIFY> {

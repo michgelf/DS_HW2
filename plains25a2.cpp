@@ -2,7 +2,6 @@
 // However you need to implement all public Plains function, as provided below as a template
 
 #include "plains25a2.h"
-#include <exception>
 
 
 Plains::Plains() {
@@ -17,16 +16,12 @@ StatusType Plains::add_team(int teamId) {
     if (teamId <= 0) {
         return StatusType::INVALID_INPUT;
     }
-    if (teams.find(teamId) != teams.end()) { /// in our mimush we do null
+    if (teams.hasEverExisted(teamId)) {
         return StatusType::FAILURE;
     }
-    try {
-        teams[teamId] = unique_ptr<Team>(new Team(teamId));
-        return StatusType::SUCCESS;
-    }
-    catch (const std::bad_alloc& e) {
-        return StatusType::ALLOCATION_ERROR;
-    }
+
+    teams.make_set(teamId);
+    return StatusType::SUCCESS;
 }
 
 StatusType Plains::add_jockey(int jockeyId, int teamId) {
@@ -34,36 +29,30 @@ StatusType Plains::add_jockey(int jockeyId, int teamId) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (jockeys.find(jockeyId) != jockeys.end() || teams.find(teamId) == teams.end()
-        || !teams[teamId]->is_active()) {
+    if (jockeysTeams.find(jockeyId) != jockeysTeams.end() || !teams.contains(teamId)) {
         return StatusType::FAILURE;
     }
 
-    try {
-        Team* team = teams[teamId].get();
-        jockeys[jockeyId] = unique_ptr<Jockey>(new Jockey(jockeyId, team));
-        team->num_jockeys++;
-        return StatusType::SUCCESS;
-    }
-    catch (const std::bad_alloc& e) {
-        return StatusType::ALLOCATION_ERROR;
-    }
+    jockeysTeams[jockeyId] = teamId;
+    jockeysRecords[jockeyId] = 0;
+    return StatusType::SUCCESS;
+
 }
 
 StatusType Plains::update_match(int victoriousJockeyId, int losingJockeyId) {
     if (victoriousJockeyId <= 0 || losingJockeyId <= 0 || victoriousJockeyId == losingJockeyId) {
         return StatusType::INVALID_INPUT;
     }
-    if (jockeys.find(victoriousJockeyId) == jockeys.end() ||
-        jockeys.find(losingJockeyId) == jockeys.end() ||
-        findRealTeam(jockeys[victoriousJockeyId]->team) ==
-        findRealTeam(jockeys[losingJockeyId]->team)
-            ) {
+
+    if (jockeysTeams.find(victoriousJockeyId) == jockeysTeams.end() ||
+        jockeysTeams.find(losingJockeyId) == jockeysTeams.end() ||
+        teams.findRootId(jockeysTeams[victoriousJockeyId]) ==
+        teams.findRootId(jockeysTeams[losingJockeyId])) {
         return StatusType::FAILURE;
     }
 
-    addJockeyRecord(jockeys[victoriousJockeyId].get(), 1);
-    addJockeyRecord(jockeys[losingJockeyId].get(), -1);
+    addJockeyRecord(victoriousJockeyId, 1);
+    addJockeyRecord(losingJockeyId, -1);
 
     return StatusType::SUCCESS;
 }
@@ -73,16 +62,12 @@ StatusType Plains::merge_teams(int teamId1, int teamId2) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (teams.find(teamId1) == teams.end() ||
-        teams.find(teamId2) == teams.end() ||
-        !teams[teamId1]->is_active() ||
-        !teams[teamId2]->is_active()) {
+    if (!teams.contains(teamId1) || !teams.contains(teamId2)) {
         return StatusType::FAILURE;
     }
 
-    unionTeams(teams[teamId1].get(), teams[teamId2].get());
+    unionTeams(teamId1, teamId2);
     return StatusType::SUCCESS;
-
 }
 
 StatusType Plains::unite_by_record(int record) {
@@ -104,96 +89,67 @@ output_t<int> Plains::get_jockey_record(int jockeyId) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (jockeys.find(jockeyId) == jockeys.end()) {
+    if (jockeysRecords.find(jockeyId) == jockeysRecords.end()) {
         return StatusType::FAILURE;
     }
 
-    return jockeys[jockeyId]->record;
+    return jockeysRecords[jockeyId];
 }
+
 
 output_t<int> Plains::get_team_record(int teamId) {
     if (teamId <= 0) {
         return StatusType::INVALID_INPUT;
     }
 
-    if (teams.find(teamId) == teams.end() || !teams[teamId]->is_active()) {
+    if (!teams.contains(teamId)) {
         return StatusType::FAILURE;
     }
 
-    return teams[teamId]->record;
+    return teams.find_set(teamId).record;
 }
 
 // private methods
 
-
-Team* Plains::findRealTeam(Team* team) {
-    // find the root of the tree
-    Team* realTeam = team;
-    while (realTeam->merged_to != nullptr) {
-        realTeam = realTeam->merged_to;
+void Plains::eraseFromRecords(Team& team) {
+    if (team.record != 0) {
+        records[team.record].erase(team.id);
+        if (records[team.record].empty()) {
+            records.erase(team.record);
+        }
     }
-
-    // compress the paths of the tree
-    Team* currTeam = team;
-    while (currTeam != realTeam) {
-        Team* tmp = currTeam->merged_to;
-        currTeam->merged_to = realTeam;
-        currTeam = tmp;
-    }
-    return realTeam;
 }
 
-void Plains::addTeamRecord(Team* team, int record) {
-    if (record == 0) {
+void Plains::addTeamRecord(Team& team, int recordToAdd) {
+    if (recordToAdd == 0) {
         return;
     }
 
-    // remove the team from the old record
-    if (team->record != 0) {
-        records[team->record].erase(team->id);
-        if (records[team->record].empty()) {
-            records.erase(team->record);
-        }
-    }
-
-    team->record += record;
-
-    // add the team to the new record
-    if (team->record != 0) {
-        records[team->record][team->id] = team;
+    int oldRecord = team.record;
+    eraseFromRecords(team);
+    int newRecord = oldRecord + recordToAdd;
+    team.record = newRecord;
+    if (newRecord != 0) {
+        records[newRecord][team.id] = team.id;
     }
 }
 
-
-void Plains::unionTeams(Team* team1, Team* team2) {
-    // find which one the bigger team
-    Team* bigTeam = team1, * smallTeam = team2;
-    if (team2->num_jockeys > team1->num_jockeys) {
-        bigTeam = team2;
-        smallTeam = team1;
-    }
-
-    // find the new id
-    int newId = team1->id;
-    if (team2->record > team1->record) {
-        newId = team2->id;
-    }
-
-    // swap the teams if needed
-    if (newId != bigTeam->id) {
-        std::swap(teams[bigTeam->id], teams[smallTeam->id]);
-        std::swap(smallTeam->id, bigTeam->id);
-        std::swap(smallTeam->record, bigTeam->record);
-    }
-
-    addTeamRecord(bigTeam, smallTeam->record);
-    addTeamRecord(smallTeam, -smallTeam->record); // deletes the record of the small team
-    smallTeam->merged_to = bigTeam;
-    bigTeam->num_jockeys += smallTeam->num_jockeys;
+void Plains::addJockeyRecord(int jockeyId, int recordToAdd) {
+    jockeysRecords[jockeyId] += recordToAdd;
+    Team& team = teams.find_set(jockeysTeams[jockeyId]);
+    addTeamRecord(team, recordToAdd);
 }
 
-void Plains::addJockeyRecord(Jockey* jockey, int record) {
-    jockey->record += record;
-    Team* team = findRealTeam(jockey->team);
-    addTeamRecord(team, record);
+void Plains::unionTeams(int teamId1, int teamId2) {
+    int root1 = teams.findRootId(teamId1);
+    int root2 = teams.findRootId(teamId2);
+    Team& t1 = teams.getRootSet(root1);
+    Team& t2 = teams.getRootSet(root2);
+    eraseFromRecords(t1);
+    eraseFromRecords(t2);
+    Team& mergedTeam = teams.union_sets(root1, root2);
+    if (mergedTeam.record != 0) {
+        records[mergedTeam.record][mergedTeam.id] = mergedTeam.id;
+    }
 }
+
