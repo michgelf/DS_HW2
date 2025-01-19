@@ -6,24 +6,37 @@
 #define DS_WET2_WINTER_2024_2025_HASH_TABLE_H
 
 #include <vector>
-#include <list>
+#include "linked_list.h"
 
 using namespace std;
 
-template<typename T>
-struct KeyValuePair {
-    int key;
-    T value;
+template<typename K, typename V>
+class KeyValuePair {
+public:
+    K first;
+    V second;
 
-    KeyValuePair(int key, const T& value) : key(key), value(value) {}
+    // Default constructor
+    //KeyValuePair() = default;
+
+    // Constructor with key and value
+    KeyValuePair(const K& key, const V& value) : first(key), second(value) {}
+
+//    // Move constructor with key and value
+//    KeyValuePair(K&& key, V&& value)
+//            : first(std::move(key)), second(std::move(value)) {}
+
+    // Perfect forwarding constructor
+    template<typename U1, typename U2>
+    KeyValuePair(U1&& key, U2&& value): first(std::move(key)), second(std::move(value)) {}
+
 };
 
 template<typename T>
 class HashTable {
 private:
     const unsigned int INITIAL_SIZE = 8;
-    vector<list < KeyValuePair<T>>>
-    table;
+    std::vector<LinkedList<KeyValuePair<int, T>>> table;
     unsigned int num_elements;
 
 
@@ -32,12 +45,12 @@ private:
     }
 
     void rehash(unsigned int new_size) {
-        vector<list < KeyValuePair<T>> > new_table(new_size);
+        vector<LinkedList<KeyValuePair<int, T>>> new_table(new_size);
 
         for (const auto& bucket: table) {
-            for (const auto& pair: bucket) {
-                unsigned int new_index = pair.key % new_size;
-                new_table[new_index].emplace_back(pair);
+            for (auto& pair: bucket) {
+                unsigned int new_index = pair.first % new_size;
+                new_table[new_index].emplace_back(std::move(pair));
             }
         }
 
@@ -62,24 +75,25 @@ public:
     T& operator[](int key) {
         unsigned int index = hash(key);
         for (auto& entry: table[index]) {
-            if (entry.key == key) {
-                return entry.value;
+            if (entry.first == key) {
+                return entry.second;
             }
         }
 
         // Key not found, insert default value
-        table[index].emplace_back(KeyValuePair<T>(key, T()));
+        auto& x = table[index];
+        x.emplace_back(KeyValuePair<int, T>(key, T()));
         ++num_elements;
         check_and_resize();
 
-        return table[hash(key)].back().value;
+        return table[hash(key)].back().second;
     }
 
     void erase(int key) {
         unsigned int index = hash(key);
         auto& bucket = table[index];
         for (auto it = bucket.begin(); it != bucket.end(); ++it) {
-            if (it->key == key) {
+            if ((*it).first == key) {
                 bucket.erase(it);
                 --num_elements;
                 check_and_resize();
@@ -91,7 +105,7 @@ public:
     bool contains(int key) const {
         unsigned int index = hash(key);
         for (const auto& entry: table[index]) {
-            if (entry.key == key) {
+            if (entry.first == key) {
                 return true;
             }
         }
@@ -106,7 +120,7 @@ public:
     const T& front() {
         for (auto& bucket: table) {
             if (!bucket.empty()) {
-                return bucket.back().value;
+                return bucket.back().second;
             }
         }
         throw std::runtime_error("No elements found in the hash table");

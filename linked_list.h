@@ -1,57 +1,76 @@
 //
-// Created by michg on 1/18/2025.
+// Created by michg on 1/19/2025.
 //
 
 #ifndef DS_WET2_WINTER_2024_2025_LINKED_LIST_H
 #define DS_WET2_WINTER_2024_2025_LINKED_LIST_H
 
+
 #include <memory>
 #include <utility>
-#include <stdexcept>
 
+// Simplified templated list
 template<typename T>
 class LinkedList {
 private:
     struct Node {
-        T data;
+        T value;
         Node* next;
 
-        Node(const T& data) : data(std::move(data)), next(nullptr) {}
-
-        ~Node() { delete next; }
+        Node(T&& val, Node* nextNode = nullptr)
+                : value(std::move(val)), next(nextNode) {}
     };
 
     Node* head = nullptr;
     Node* tail = nullptr;
 
 public:
-    LinkedList() : head(nullptr), tail(nullptr) {};
+    LinkedList() = default;
 
     ~LinkedList() {
-        delete head;
+        clear();
     }
 
+    // Disable copy
+    LinkedList(const LinkedList&) = delete;
 
-    void emplace_back(const T& value) {
-        Node* newNode = new Node(std::move(value));
-        if (tail) {
-            tail->next = newNode;
-        } else {
-            head = newNode;
+    LinkedList& operator=(const LinkedList&) = delete;
+
+    // Enable move
+    LinkedList(LinkedList&& other) noexcept
+            : head(other.head), tail(other.tail) {
+        other.head = nullptr;
+        other.tail = nullptr;
+    }
+
+    LinkedList& operator=(LinkedList&& other) noexcept {
+        if (this != &other) {
+            clear();
+            head = other.head;
+            tail = other.tail;
+            other.head = nullptr;
+            other.tail = nullptr;
         }
-        tail = newNode;
+        return *this;
     }
 
-    bool empty() const {
-        return tail == nullptr;
+    void emplace_back(T&& value) {
+        Node* newNode = new Node(std::forward<T>(value));
+        if (!tail) {
+            head = tail = newNode;
+        } else {
+            tail->next = newNode;
+            tail = newNode;
+        }
     }
 
     T& back() {
-        if (empty()) {
+        if (!tail) {
             throw std::runtime_error("List is empty");
         }
-        return tail->data;
+        return tail->value;
     }
+
 
     struct Iterator;
 
@@ -60,35 +79,42 @@ public:
             return;
         }
 
-        // remove head
         if (pos.current == head) {
-            Node* tmp = head;
+            Node* temp = head;
             head = head->next;
-            if (tail == tmp) {
+            delete temp;
+            if (!head) {
                 tail = nullptr;
             }
-            tmp->next = nullptr;
-            delete tmp;
             return;
         }
 
-        // Find the nodeBefore before the node to remove
-        Node* nodeBefore = head;
-        while (nodeBefore->next != nullptr && nodeBefore->next != pos.current) {
-            nodeBefore = nodeBefore->next;
+        Node* prev = head;
+        while (prev->next && prev->next != pos.current) {
+            prev = prev->next;
         }
 
-        // Delete the node after nodeBefore only if found
-        if (nodeBefore->next) {
-            Node* tmp = nodeBefore->next;
-            nodeBefore->next = tmp->next;
-            if (tmp == tail) {
-                tail = nodeBefore;
+        if (prev->next) {
+            Node* temp = prev->next;
+            prev->next = temp->next;
+            if (temp == tail) {
+                tail = prev;
             }
-            tmp->next = nullptr;
-            delete tmp;
+            delete temp;
         }
+    }
 
+    void clear() {
+        while (head) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+        }
+        tail = nullptr;
+    }
+
+    bool empty() const {
+        return head == nullptr;
     }
 
     // Range-based for loop support
@@ -97,7 +123,7 @@ public:
 
         explicit Iterator(Node* node) : current(node) {}
 
-        T& operator*() { return current->data; }
+        T& operator*() { return current->value; }
 
         Iterator& operator++() {
             current = current->next;
@@ -107,9 +133,15 @@ public:
         bool operator!=(const Iterator& other) const { return current != other.current; }
     };
 
+    Iterator begin() { return Iterator(head); }
+
+    Iterator end() { return Iterator(nullptr); }
+
+    // Const versions for const objects
     Iterator begin() const { return Iterator(head); }
 
     Iterator end() const { return Iterator(nullptr); }
+
 };
 
 
