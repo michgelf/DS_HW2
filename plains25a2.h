@@ -5,7 +5,7 @@
 // 
 // The following header file contains all methods we expect you to implement.
 // You MAY add private methods and fields of your own.
-// DO NOT erase or modify the signatures of the public methods.
+// DO NOT remove or modify the signatures of the public methods.
 // DO NOT modify the preprocessors in this file.
 // DO NOT use the preprocessors in your other code files.
 // 
@@ -21,17 +21,25 @@
 
 class Plains {
 private:
-    //
-    // Here you may add anything you want
-    //
-    HashTable<int> jockeysRecords;
-    HashTable<int> jockeysTeams;
-    UnionFindTeams teams;
-    HashTable<HashTable<int>> records;
 
-    void addJockeyRecord(int, int);
+    struct Jockey {
+        int teamId;
+        int record;
 
-    void addTeamRecord(Team&, int);
+        Jockey() = default;
+
+        Jockey(int teamId) : teamId(teamId), record(0) {}
+    };
+
+    HashTable<Jockey> m_jockeys;
+
+    UnionFindTeams m_teams;
+
+    HashTable<HashTable<int>> m_records;
+
+    void addJockeyRecord(int jockeyId, int recordToAdd);
+
+    void addTeamRecord(Team& team, int recordToAdd);
 
     void eraseFromRecords(Team& team);
 

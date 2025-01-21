@@ -1,68 +1,31 @@
-//
-// Created by michg on 1/18/2025.
-//
+#ifndef HASH_TABLE_H
+#define HASH_TABLE_H
 
-#ifndef DS_WET2_WINTER_2024_2025_HASH_TABLE_H
-#define DS_WET2_WINTER_2024_2025_HASH_TABLE_H
-
-#include "linked_list.h"
 #include "array.h"
+#include "linked_list.h"
+#include <utility>
+#include <stdexcept>
 
-using namespace std;
-
-template<typename K, typename V>
-class KeyValuePair {
-public:
-    K first;
-    V second;
-
-    // Constructor with key and value
-    KeyValuePair(const K& key, const V& value) : first(key), second(value) {}
-};
 
 template<typename T>
 class HashTable {
 private:
 
     typedef int hash_key_t;
-    typedef Array<LinkedList<KeyValuePair<hash_key_t, T>>> ArrayOfLists;
-    typedef KeyValuePair<hash_key_t, T> pair_t;
+    typedef std::pair<hash_key_t, T> pair_t;
+    typedef Array<LinkedList<pair_t>> ArrayOfLists;
     static const size_t INITIAL_SIZE = 8;
-    ArrayOfLists table;
-    size_t num_elements;
+    ArrayOfLists m_table;
+    size_t m_size;
 
+    size_t hash(hash_key_t key) const;
 
-    size_t hash(hash_key_t key) const {
-        return key % table.get_size();
-    }
+    void rehash(size_t new_size);
 
-    void rehash(size_t new_size) {
-        ArrayOfLists new_table(new_size);
-
-        for (const auto& lst: table) {
-            for (const auto& pair: lst) {
-                size_t new_index = pair.first % new_size;
-                new_table[new_index].emplace_back(std::move(pair));
-            }
-        }
-
-
-        table = std::move(new_table);
-    }
-
-    void check_and_resize() {
-        size_t tableSize = table.get_size();
-        double load_factor = static_cast<double>(num_elements) / tableSize;
-        if (load_factor > 1.0) {
-            rehash(tableSize * 2);
-        } else if (load_factor < 0.25 && tableSize > 8) {
-            rehash(tableSize / 2);
-        }
-    }
+    void resizeIfNeeded();
 
 public:
-    HashTable() : table(INITIAL_SIZE), num_elements(0) {}
-
+    HashTable();
 
     virtual ~HashTable() = default;
 
@@ -70,84 +33,140 @@ public:
 
     HashTable(HashTable&& other) noexcept = default;
 
-
     HashTable& operator=(const HashTable& other) = default;
 
     HashTable& operator=(HashTable&& other) noexcept = default;
 
-    // If key does not exist, inserts a new key with a default value.
+    // If first does not exist, inserts a new first with a default second.
     // Assumes that if this is not the wanted behavior, the user will use contains() before
+    T& operator[](hash_key_t key);
 
-    // todo consider make a const version
-    T& operator[](hash_key_t key) {
-        size_t index = hash(key);
-        for (auto& pair: table[index]) {
-            if (pair.first == key) {
-                return pair.second;
-            }
-        }
+    const T& operator[](hash_key_t key) const;
 
-        // Key not found, insert default value
-        table[index].emplace_back(pair_t(key, T()));
-        ++num_elements;
-        check_and_resize();
+    void remove(hash_key_t key);
 
-        return table[hash(key)].back().second;
-    }
+    bool contains(hash_key_t key) const;
 
-    const T& operator[](hash_key_t key) const {
-        size_t index = hash(key);
-        for (const auto& pair: table[index]) {
-            if (pair.first == key) {
-                return pair.second;
-            }
-        }
-        throw std::runtime_error("Key not found");
-    }
+    bool empty() const;
 
+    const T& front() const;
 
-    void erase(hash_key_t key) {
-        size_t index = hash(key);
-        auto& lst = table[index];
-        for (auto it = lst.begin(); it != lst.end(); ++it) {
-            if (it->first == key) {
-                lst.erase(it);
-                --num_elements;
-                check_and_resize();
-                return;
-            }
-        }
-    }
-
-    bool contains(hash_key_t key) const {
-        size_t index = hash(key);
-        for (const auto& entry: table[index]) {
-            if (entry.first == key) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    bool empty() const {
-        return num_elements == 0;
-    }
-
-    const T& front() {
-        for (auto& lst: table) {
-            if (!lst.empty()) {
-                return lst.back().second;
-            }
-        }
-        throw std::runtime_error("No elements found in the hash table");
-    }
-
-    size_t size() const {
-        return num_elements;
-    }
+    size_t size() const;
 
 };
 
+// Implementation
 
-#endif //DS_WET2_WINTER_2024_2025_HASH_TABLE_H
+template<class T>
+HashTable<T>::HashTable() : m_table(INITIAL_SIZE), m_size(0) {}
+
+
+template<class T>
+T& HashTable<T>::operator[](hash_key_t key) {
+    size_t index = hash(key);
+    for (auto& pair: m_table[index]) {
+        if (pair.first == key) {
+            return pair.second;
+        }
+    }
+
+    // Key not found, insert default second
+    m_table[index].append(pair_t(key, T()));
+    ++m_size;
+    resizeIfNeeded();
+
+    return m_table[hash(key)].back().second;
+}
+
+template<class T>
+const T& HashTable<T>::operator[](hash_key_t key) const {
+    size_t index = hash(key);
+    for (const auto& pair: m_table[index]) {
+        if (pair.first == key) {
+            return pair.second;
+        }
+    }
+    throw std::runtime_error("Key not found");
+}
+
+template<class T>
+void HashTable<T>::remove(hash_key_t key) {
+    size_t index = hash(key);
+    auto& lst = m_table[index];
+    for (auto it = lst.begin(); it != lst.end(); ++it) {
+        if (it->first == key) {
+            lst.remove(it);
+            --m_size;
+            resizeIfNeeded();
+            return;
+        }
+    }
+}
+
+template<class T>
+bool HashTable<T>::contains(hash_key_t key) const {
+    size_t index = hash(key);
+    for (const auto& entry: m_table[index]) {
+        if (entry.first == key) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+template<class T>
+bool HashTable<T>::empty() const {
+    return m_size == 0;
+}
+
+template<class T>
+const T& HashTable<T>::front() const {
+    for (auto& lst: m_table) {
+        if (!lst.empty()) {
+            return lst.back().second;
+        }
+    }
+    throw std::runtime_error("No elements found in the hash m_table");
+}
+
+template<class T>
+size_t HashTable<T>::size() const {
+    return m_size;
+}
+
+
+// private methods
+
+template<class T>
+size_t HashTable<T>::hash(hash_key_t key) const {
+    return key % m_table.size();
+}
+
+template<class T>
+void HashTable<T>::rehash(size_t new_size) {
+    ArrayOfLists new_table(new_size);
+
+    for (const auto& lst: m_table) {
+        for (const auto& pair: lst) {
+            size_t new_index = pair.first % new_size;
+            new_table[new_index].append(std::move(pair));
+        }
+    }
+
+    m_table = std::move(new_table);
+}
+
+template<class T>
+void HashTable<T>::resizeIfNeeded() {
+    size_t tableSize = m_table.size();
+    double load_factor = static_cast<double>(m_size) / tableSize;
+    if (load_factor > 1.0) {
+        rehash(tableSize * 2);
+    } else if (load_factor < 0.25 && tableSize > 8) {
+        rehash(tableSize / 2);
+    }
+}
+
+
+#endif //HASH_TABLE_H
