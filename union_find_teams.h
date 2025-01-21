@@ -35,11 +35,12 @@ public:
         mergedTeam.id = newId;
         mergedTeam.record = newRecord;
         // compresses paths and ensures that finding the team with the id of the mergedTeam is O(1)
-        findRootId(newId);
+        findRoot(newId);
         return mergedTeam;
     }
 
-    bool contains(int setId) override {
+    // todo consider make it const
+    bool contains(int setId) {
         if (!hasEverExisted(setId)) {
             return false;
         }

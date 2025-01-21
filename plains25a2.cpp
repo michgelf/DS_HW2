@@ -45,8 +45,8 @@ StatusType Plains::update_match(int victoriousJockeyId, int losingJockeyId) {
     }
 
     if (!jockeysTeams.contains(victoriousJockeyId) || !jockeysTeams.contains(losingJockeyId) ||
-        teams.findRootId(jockeysTeams[victoriousJockeyId]) ==
-        teams.findRootId(jockeysTeams[losingJockeyId])) {
+        teams.findRoot(jockeysTeams[victoriousJockeyId]) ==
+        teams.findRoot(jockeysTeams[losingJockeyId])) {
         return StatusType::FAILURE;
     }
 
@@ -140,8 +140,8 @@ void Plains::addJockeyRecord(int jockeyId, int recordToAdd) {
 }
 
 void Plains::unionTeams(int teamId1, int teamId2) {
-    int root1 = teams.findRootId(teamId1);
-    int root2 = teams.findRootId(teamId2);
+    int root1 = teams.findRoot(teamId1);
+    int root2 = teams.findRoot(teamId2);
     Team& t1 = teams.getRootSet(root1);
     Team& t2 = teams.getRootSet(root2);
     eraseFromRecords(t1);

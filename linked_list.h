@@ -2,78 +2,150 @@
 // Created by michg on 1/19/2025.
 //
 
-#ifndef DS_WET2_WINTER_2024_2025_LINKED_LIST_H
-#define DS_WET2_WINTER_2024_2025_LINKED_LIST_H
+#ifndef C_SCRIPTS_LINKED_LIST_H
+#define C_SCRIPTS_LINKED_LIST_H
 
 
-#include <memory>
+#include <iostream>
 #include <utility>
 
-// Simplified templated list
 template<typename T>
 class LinkedList {
 private:
     struct Node {
-        T value;
+        T data;
         Node* next;
 
-        Node(T&& val, Node* nextNode = nullptr)
-                : value(std::move(val)), next(nextNode) {}
+        Node(const T& value, Node* next_node = nullptr) : data(value), next(next_node) {}
+
+        Node(T&& value, Node* next_node = nullptr) : data(std::move(value)), next(next_node) {}
     };
 
-    Node* head = nullptr;
-    Node* tail = nullptr;
+    Node* head;
+    Node* tail;
+
+    void clear() {
+        while (head) {
+            Node* temp = head;
+            head = head->next;
+            delete temp;
+        }
+        tail = nullptr;
+    }
 
 public:
-    LinkedList() = default;
+    // Nested iterator class
+    class Iterator {
+        Node* current;
 
-    ~LinkedList() {
-        clear();
+        friend class LinkedList<T>;
+
+    public:
+        explicit Iterator(Node* node) : current(node) {}
+
+        T& operator*() { return current->data; }
+
+        T* operator->() { return &current->data; }
+
+        Iterator& operator++() {
+            current = current->next;
+            return *this;
+        }
+
+        bool operator==(const Iterator& other) const { return current == other.current; }
+
+        bool operator!=(const Iterator& other) const { return !(*this == other); }
+    };
+
+    // Const iterator
+    class ConstIterator {
+    private:
+        const Node* current;
+
+        friend class LinkedList<T>;
+
+
+    public:
+        explicit ConstIterator(const Node* node) : current(node) {}
+
+        const T& operator*() const { return current->data; }
+
+        const T* operator->() const { return &current->data; }
+
+        ConstIterator& operator++() {
+            current = current->next;
+            return *this;
+        }
+
+        bool operator==(const ConstIterator& other) const { return current == other.current; }
+
+        bool operator!=(const ConstIterator& other) const { return !(*this == other); }
+    };
+
+    // Default constructor
+    LinkedList() : head(nullptr), tail(nullptr) {}
+
+    // Destructor
+    virtual ~LinkedList() { clear(); }
+
+    // Copy constructor
+    LinkedList(const LinkedList& other) : head(nullptr), tail(nullptr) {
+        for (const auto& item: other) {
+            emplace_back(item);
+        }
     }
 
-    // Disable copy
-    LinkedList(const LinkedList&) = delete;
-
-    LinkedList& operator=(const LinkedList&) = delete;
-
-    // Enable move
-    LinkedList(LinkedList&& other) noexcept
-            : head(other.head), tail(other.tail) {
-        other.head = nullptr;
-        other.tail = nullptr;
+    // TODO
+    // Move constructor
+    LinkedList(LinkedList&& other) noexcept: head(other.head), tail(other.tail) {
+        other.head = other.tail = nullptr;
     }
 
+    bool empty() const {
+        return head == nullptr;
+    }
+
+    // Copy assignment operator
+    LinkedList& operator=(const LinkedList& other) {
+        if (this != &other) {
+            clear();
+            for (const auto& item: other) {
+                emplace_back(item);
+            }
+        }
+        return *this;
+    }
+
+    // TODO
+    // Move assignment operator
     LinkedList& operator=(LinkedList&& other) noexcept {
         if (this != &other) {
             clear();
             head = other.head;
             tail = other.tail;
-            other.head = nullptr;
-            other.tail = nullptr;
+            other.head = other.tail = nullptr;
         }
         return *this;
     }
 
-    void emplace_back(T&& value) {
-        Node* newNode = new Node(std::forward<T>(value));
-        if (!tail) {
-            head = tail = newNode;
+    // Emplace back
+    void emplace_back(const T& value) {
+        Node* new_node = new Node(value);
+        if (tail) {
+            tail->next = new_node;
         } else {
-            tail->next = newNode;
-            tail = newNode;
+            head = new_node;
         }
+        tail = new_node;
     }
+
+    // Back
 
     T& back() {
-        if (!tail) {
-            throw std::runtime_error("List is empty");
-        }
-        return tail->value;
+        return tail->data;
     }
 
-
-    struct Iterator;
-
+    // Erase
     void erase(Iterator pos) {
         if (!head || !pos.current) {
             return;
@@ -104,45 +176,16 @@ public:
         }
     }
 
-    void clear() {
-        while (head) {
-            Node* temp = head;
-            head = head->next;
-            delete temp;
-        }
-        tail = nullptr;
-    }
-
-    bool empty() const {
-        return head == nullptr;
-    }
-
-    // Range-based for loop support
-    struct Iterator {
-        Node* current;
-
-        explicit Iterator(Node* node) : current(node) {}
-
-        T& operator*() { return current->value; }
-
-        Iterator& operator++() {
-            current = current->next;
-            return *this;
-        }
-
-        bool operator!=(const Iterator& other) const { return current != other.current; }
-    };
-
+    // Iterators
     Iterator begin() { return Iterator(head); }
 
     Iterator end() { return Iterator(nullptr); }
 
-    // Const versions for const objects
-    Iterator begin() const { return Iterator(head); }
+    ConstIterator begin() const { return ConstIterator(head); }
 
-    Iterator end() const { return Iterator(nullptr); }
+    ConstIterator end() const { return ConstIterator(nullptr); }
 
 };
 
 
-#endif //DS_WET2_WINTER_2024_2025_LINKED_LIST_H
+#endif //C_SCRIPTS_LINKED_LIST_H

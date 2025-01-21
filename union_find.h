@@ -11,14 +11,25 @@
 template<class Set>
 class UnionFind {
 protected:
+    typedef int set_id_t;
     HashTable<Set> sets; // maps roots to sets descriptions
-    HashTable<unsigned int> sizes; // maps roots to sizes of sets
-    HashTable<int> parents;
+    HashTable<size_t> sizes; // maps roots to sizes of their trees
+    HashTable<set_id_t> parents; // maps each set to its parent in the tree
 public:
+
+    UnionFind() = default;
 
     virtual ~UnionFind() = default;
 
-    void make_set(int setId, Set set) {
+    UnionFind(const UnionFind& other) = default;
+
+    UnionFind(UnionFind&& other) noexcept = default;
+
+    UnionFind& operator=(const UnionFind& other) = default;
+
+    UnionFind& operator=(UnionFind&& other) noexcept = default;
+
+    void make_set(set_id_t setId, Set set) {
         if (!hasEverExisted(setId)) {
             parents[setId] = setId;
             sets[setId] = set;
@@ -26,7 +37,8 @@ public:
         }
     }
 
-    virtual Set& union_sets(int root1, int root2) {
+    virtual Set& union_sets(set_id_t root1, set_id_t root2) {
+        assert(sizes.contains(root1) && sizes.contains(root2));
         if (sizes[root1] < sizes[root2]) {
             swap(root1, root2);
         }
@@ -39,29 +51,24 @@ public:
         return getRootSet(root1);
     }
 
-    Set& getRootSet(int root) {
+    Set& getRootSet(set_id_t root) {
         assert(sets.contains(root));
         return sets[root];
     }
 
-    int findRootId(int setId) {
+    int findRoot(set_id_t setId) {
         if (parents[setId] != setId) {
-            parents[setId] = findRootId(parents[setId]); // compress paths
+            parents[setId] = findRoot(parents[setId]); // compress paths
         }
         return parents[setId];
     }
 
-    Set& find_set(int setId) {
-        return getRootSet(findRootId(setId));
+    Set& find_set(set_id_t setId) {
+        return getRootSet(findRoot(setId));
     }
 
-    bool hasEverExisted(int member) {
+    bool hasEverExisted(set_id_t member) const {
         return parents.contains(member);
-    }
-
-
-    virtual bool contains(int setId) {
-        return hasEverExisted(setId) && find_set(setId).id == setId;
     }
 
 
