@@ -18,24 +18,34 @@ public:
 
     virtual ~UnionFind() = default;
 
-    UnionFind(const UnionFind& other) = default;
+    // Copy constructor
+    UnionFind(const UnionFind &other) = default;
 
-    UnionFind(UnionFind&& other) noexcept = default;
+    // Move constructor
+    UnionFind(UnionFind &&other) noexcept = default;
 
-    UnionFind& operator=(const UnionFind& other) = default;
+    // Copy assignment operator
+    UnionFind &operator=(const UnionFind &other) = default;
 
-    UnionFind& operator=(UnionFind&& other) noexcept = default;
+    // Move assignment operator
+    UnionFind &operator=(UnionFind &&other) noexcept = default;
 
-    void makeSet(set_id_t setId, const T& set);
+    // Creates a new set with the given ID and description.
+    void makeSet(set_id_t setId, const T &set);
 
-    virtual T& unionSets(set_id_t root1, set_id_t root2);
+    // Merges two sets and returns the description of the new root set.
+    virtual T &unionSets(set_id_t root1, set_id_t root2);
 
-    T& getRootSet(set_id_t root); // get the set description of the root
+    // get the set description of the root
+    T &getRootSet(set_id_t root);
 
-    set_id_t findRoot(set_id_t setId); // find the root of the tree containing setId
+    // find the root of the tree containing setId
+    set_id_t findRoot(set_id_t setId);
 
-    T& findSet(set_id_t setId); // = findRoot + getRootSet
+    // find the set description of the tree containing setId
+    T &findSet(set_id_t setId);
 
+    // check if a set has ever existed
     bool hasEverExisted(set_id_t member) const;
 
 };
@@ -43,7 +53,7 @@ public:
 // Implementation
 
 template<class T>
-void UnionFind<T>::makeSet(set_id_t setId, const T& set) {
+void UnionFind<T>::makeSet(set_id_t setId, const T &set) {
     if (!hasEverExisted(setId)) {
         m_parents[setId] = setId;
         m_sets[setId] = set;
@@ -52,7 +62,7 @@ void UnionFind<T>::makeSet(set_id_t setId, const T& set) {
 }
 
 template<class T>
-T& UnionFind<T>::unionSets(set_id_t root1, set_id_t root2) {
+T &UnionFind<T>::unionSets(set_id_t root1, set_id_t root2) {
     assert(m_sizes.contains(root1) && m_sizes.contains(root2));
     if (m_sizes[root1] < m_sizes[root2]) {
         std::swap(root1, root2);
@@ -66,7 +76,7 @@ T& UnionFind<T>::unionSets(set_id_t root1, set_id_t root2) {
 }
 
 template<class T>
-T& UnionFind<T>::getRootSet(set_id_t root) {
+T &UnionFind<T>::getRootSet(set_id_t root) {
     assert(m_sets.contains(root));
     return m_sets[root];
 }
@@ -80,7 +90,7 @@ typename UnionFind<T>::set_id_t UnionFind<T>::findRoot(set_id_t setId) {
 }
 
 template<class T>
-T& UnionFind<T>::findSet(set_id_t setId) {
+T &UnionFind<T>::findSet(set_id_t setId) {
     return getRootSet(findRoot(setId));
 }
 
