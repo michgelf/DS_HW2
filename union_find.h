@@ -8,8 +8,8 @@ template<class T>
 class UnionFind {
 protected:
     typedef int set_id_t;
-    HashTable<T> m_sets; // maps roots to m_sets descriptions
-    HashTable<size_t> m_sizes; // maps roots to m_sizes of their trees
+    HashTable<T> m_sets; // maps roots to set descriptions
+    HashTable<size_t> m_sizes; // maps roots to sizes of their trees
     HashTable<set_id_t> m_parents; // maps each set to its parent in the trees
 
 public:
@@ -37,7 +37,7 @@ public:
     T& findSet(set_id_t setId); // = findRoot + getRootSet
 
     bool hasEverExisted(set_id_t member) const;
-    
+
 };
 
 // Implementation
