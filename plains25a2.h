@@ -36,6 +36,7 @@ private:
     UnionFindTeams m_teams;
 
     HashTable<HashTable<int>> m_records;
+
     /**
     * @brief Adds a record to a jockey
     * @param jockeyId The id of the jockey
@@ -48,13 +49,13 @@ private:
      * @param team The team to add the record to
      * @param recordToAdd The record to add
      */
-    void addTeamRecord(Team &team, int recordToAdd);
+    void addTeamRecord(Team& team, int recordToAdd);
 
     /**
     * @brief Erases a team from the records hash table
     * @param team The team to erase
     */
-    void eraseFromRecords(Team &team);
+    void eraseFromRecords(Team& team);
 
     /**
     * @brief Unions two teams and updates the records hash table accordingly
